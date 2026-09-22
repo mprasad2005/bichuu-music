@@ -1,0 +1,9 @@
+services:
+  musicbot:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./downloads:/app/downloads
+      - ./musicbot.db:/app/musicbot.db
