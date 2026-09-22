@@ -201,22 +201,19 @@ def register(app, player):
             return await message.reply_text("Usage: /playforce <song name or URL>")
         query = message.text.split(None, 1)[1]
         try:
+            chat_id = message.chat.id
+            if player.queues.get_current(chat_id) or player.queues.peek_all(chat_id):
+                await player.stop(chat_id)
+                stop_progress(chat_id)
+                progress_states.pop(chat_id, None)
             track = await player.enqueue(
-                message.chat.id,
+                chat_id,
                 query,
                 message.from_user.id,
                 message.from_user.first_name,
             )
-            if not player.queues.get_current(message.chat.id):
-                await player.play_next(message.chat.id)
-                await send_now_playing(message, track)
-            else:
-                position = len(player.queues.peek_all(message.chat.id))
-                await message.reply_text(
-                    queued_text(track, position),
-                    reply_markup=queue_buttons(position),
-                    parse_mode=None,
-                )
+            await player.play_next(chat_id)
+            await send_now_playing(message, track)
         except Exception as e:
             logger.exception("Could not force play query %r", query)
             await message.reply_text(f"Could not play this track: {type(e).__name__}: {e}", parse_mode=None)
